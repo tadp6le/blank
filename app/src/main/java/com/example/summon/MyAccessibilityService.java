@@ -14,9 +14,9 @@ import android.view.accessibility.AccessibilityEvent;
  *
  * What this service adds:
  *  - Android 14+ (API 34): opts in to raw touch events via
- *    setMotionEventSources() — this is REQUIRED for onMotionEvent to ever
- *    fire. We detect a deliberate vertical swipe starting inside the outer
- *    12dp of the screen.
+ *    setMotionEventSources() when the platform supports it. Some OEM builds
+ *    hide or restrict this API, so we use reflection to keep the app buildable
+ *    and compatible with Android 12+.
  *  - 3-button navigation: we observe (never consume) KEYCODE_HOME and
  *    measure the press duration to detect a long press.
  *
@@ -42,10 +42,14 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        if (Build.VERSION.SDK_INT >= 34) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             try {
-                // Android 14+: without this call onMotionEvent is NEVER invoked.
-                setMotionEventSources(InputDevice.SOURCE_TOUCHSCREEN);
+                // Android 14+: some builds expose the API; others do not.
+                // Reflection keeps the app compatible with Android 12 and avoids
+                // compile failures on OEM/custom ROMs or older API jars.
+                java.lang.reflect.Method method = AccessibilityService.class
+                        .getMethod("setMotionEventSources", int.class);
+                method.invoke(this, InputDevice.SOURCE_TOUCHSCREEN);
             } catch (Exception ignored) {
                 // Some OEM builds restrict this; assistant role still works.
             }
