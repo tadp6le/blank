@@ -44,6 +44,7 @@ public class MyAccessibilityService extends AccessibilityService {
                         homeKeyFired = false;
                     }
                     break;
+
                 case KeyEvent.ACTION_UP:
                     homeKeyDown = false;
                     if (!homeKeyFired
@@ -66,7 +67,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     @Override
-    public boolean onMotionEvent(MotionEvent event) {
+    public void onMotionEvent(MotionEvent event) {
         // Available on API 34+ when canRetrieveWindowContent is false but
         // the service has FLAG_REQUEST_FILTER_KEY_EVENTS + touch exploration
         // of motion events. Acts as a secondary trigger path.
@@ -80,6 +81,7 @@ public class MyAccessibilityService extends AccessibilityService {
                     edgeStartY = event.getY();
                 }
                 break;
+
             case MotionEvent.ACTION_UP:
                 if (edgeTouchActive) {
                     edgeTouchActive = false;
@@ -92,14 +94,15 @@ public class MyAccessibilityService extends AccessibilityService {
                 }
                 break;
         }
-        return false; // never consume; system gestures keep working
+        // Do not return anything here; AccessibilityService.onMotionEvent is void.
     }
 
     private void summon() {
-        if (homeKeyFired || edgeTouchActive) {
-            // debounce double-fire
+        if (homeKeyFired) {
+            return; // prevent duplicate triggers
         }
         homeKeyFired = true;
+
         Intent i = new Intent(this, SummonActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_NO_ANIMATION
