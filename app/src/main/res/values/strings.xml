@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Summon</string>
+    <string name="accessibility_label">Summon Trigger Service</string>
+    <string name="accessibility_description">Detects Home-key long-press and screen-edge swipes to summon the floating AI panel. This app does NOT need to be set as your default assistant.</string>
+    <string name="enable_service">Enable the trigger service</string>
+    <string name="api_key_hint">Paste your API key (stays encrypted on this device)</string>
+    <string name="provider_hint">AI provider</string>
+    <string name="save">Save</string>
+    <string name="input_hint">Ask AI anything…</string>
+    <string name="send">Send</string>
+    <string name="status_off">Trigger service is OFF — tap to enable</string>
+    <string name="status_on">Trigger service is ON</string>
+    <string name="copied">Copied to clipboard</string>
+    <string name="no_key">No API key saved — text copied to clipboard instead</string>
+</resources>
