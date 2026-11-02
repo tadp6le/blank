@@ -1,7 +1,7 @@
 package com.example.summon;
 
 import android.Manifest;
-import android.app.RoleManager;
+import android.app.role.RoleManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -83,8 +83,6 @@ public class MainActivity extends AppCompatActivity {
         Button saveBtn = findViewById(R.id.saveBtn);
         Button testBtn = findViewById(R.id.testBtn);
 
-        // Wire the edge-strip toggle (set state BEFORE the listener so a
-        // programmatic set doesn't fire it).
         edgeToggle.setChecked(SettingsStore.isEdgeTriggerEnabled(this));
         edgeToggle.setOnCheckedChangeListener((button, checked) -> {
             SettingsStore.setEdgeTriggerEnabled(this, checked);
@@ -114,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Restore saved configuration (before arming the auto-fill listener).
         String provider = SettingsStore.getProvider(this);
         int idx = PRESETS.length - 1;
         for (int i = 0; i < PRESETS.length; i++) {
@@ -175,10 +172,6 @@ public class MainActivity extends AppCompatActivity {
         startTriggerServiceIfPossible();
     }
 
-    // ------------------------------------------------------------------ //
-    // Step 1: default assistant role                                      //
-    // ------------------------------------------------------------------ //
-
     private boolean assistantHeld() {
         try {
             RoleManager rm = getSystemService(RoleManager.class);
@@ -199,15 +192,10 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),
                     REQ_ASSISTANT);
         } catch (Exception e) {
-            // OEM without the role dialog -> send the user to Default apps.
             Toast.makeText(this, R.string.role_error, Toast.LENGTH_LONG).show();
             startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));
         }
     }
-
-    // ------------------------------------------------------------------ //
-    // Step 2: persistent edge triggers                                    //
-    // ------------------------------------------------------------------ //
 
     private void startTriggerServiceIfPossible() {
         if (SettingsStore.isEdgeTriggerEnabled(this)
