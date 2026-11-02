@@ -45,7 +45,11 @@ public class MyAccessibilityService extends AccessibilityService {
         if (Build.VERSION.SDK_INT >= 34) {
             try {
                 // Android 14+: without this call onMotionEvent is NEVER invoked.
-                setMotionEventSources(InputDevice.SOURCE_TOUCHSCREEN);
+                // Some OEM builds restrict or hide this API, so use reflection
+                // to keep the project compiling cleanly while still attempting it.
+                java.lang.reflect.Method setMotionEventSources =
+                        AccessibilityService.class.getMethod("setMotionEventSources", int.class);
+                setMotionEventSources.invoke(this, InputDevice.SOURCE_TOUCHSCREEN);
             } catch (Exception ignored) {
                 // Some OEM builds restrict this; assistant role still works.
             }
