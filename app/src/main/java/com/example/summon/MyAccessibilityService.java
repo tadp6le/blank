@@ -124,3 +124,4 @@ public class MyAccessibilityService extends AccessibilityService {
     public void onInterrupt() {
         // No-op.
     }
+}
