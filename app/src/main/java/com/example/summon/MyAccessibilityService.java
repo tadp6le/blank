@@ -45,7 +45,7 @@ public class MyAccessibilityService extends AccessibilityService {
         if (Build.VERSION.SDK_INT >= 34) {
             try {
                 // Android 14+: without this call onMotionEvent is NEVER invoked.
-                setMotionEventSources(InputDevice.SOURCE_TOUCH_SCREEN);
+                setMotionEventSources(InputDevice.SOURCE_TOUCHSCREEN);
             } catch (Exception ignored) {
                 // Some OEM builds restrict this; assistant role still works.
             }
@@ -71,7 +71,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     @Override
-    public boolean onMotionEvent(MotionEvent event) {
+    public void onMotionEvent(MotionEvent event) {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int edge = Math.round(12f * getResources().getDisplayMetrics().density);
 
@@ -99,7 +99,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 }
                 break;
         }
-        return false; // never consume: system gestures keep working
+        // no return value: AccessibilityService.onMotionEvent is void
     }
 
     private void summon() {
@@ -124,4 +124,3 @@ public class MyAccessibilityService extends AccessibilityService {
     public void onInterrupt() {
         // No-op.
     }
-}
