@@ -69,7 +69,9 @@ public class FloatingWindowService extends Service {
         final float[] downY = {0};
 
         View v = new View(this);
-        v.setLayoutParams(new View.LayoutParams(EDGE_WIDTH_PX, WindowManager.LayoutParams.MATCH_PARENT));
+        v.setLayoutParams(new WindowManager.LayoutParams(
+                EDGE_WIDTH_PX,
+                WindowManager.LayoutParams.MATCH_PARENT));
         v.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
