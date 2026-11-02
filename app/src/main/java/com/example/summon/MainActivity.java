@@ -1,7 +1,7 @@
 package com.example.summon;
 
 import android.Manifest;
-import android.app.RoleManager;
+import android.app.role.RoleManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -231,4 +231,4 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < PRESETS.length; i++) labels[i] = PRESETS[i][0];
         return labels;
     }
-}
+                }
