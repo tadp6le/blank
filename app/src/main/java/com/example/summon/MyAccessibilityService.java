@@ -9,19 +9,9 @@ import android.view.MotionEvent;
 import android.view.accessibility.AccessibilityEvent;
 
 /**
- * Secondary trigger path (the PRIMARY trigger is the Default Assistant role,
- * which makes Home long-press / corner-swipe summon the panel system-wide).
- *
- * What this service adds:
- *  - Android 14+ (API 34): opts in to raw touch events via
- *    setMotionEventSources() when the platform supports it. Some OEM builds
- *    hide or restrict this API, so we use reflection to keep the app buildable
- *    and compatible with Android 12+.
- *  - 3-button navigation: we observe (never consume) KEYCODE_HOME and
- *    measure the press duration to detect a long press.
- *
- * The service never consumes events, so system gestures (back, home) keep
- * working exactly as before.
+ * This service is an optional extra trigger path only. On Android 12,
+ * the system assistant role and the overlay-trigger service are the reliable
+ * mechanisms for Gemini-like summon behavior.
  */
 public class MyAccessibilityService extends AccessibilityService {
 
@@ -44,14 +34,13 @@ public class MyAccessibilityService extends AccessibilityService {
         super.onServiceConnected();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             try {
-                // Android 14+: some builds expose the API; others do not.
-                // Reflection keeps the app compatible with Android 12 and avoids
-                // compile failures on OEM/custom ROMs or older API jars.
                 java.lang.reflect.Method method = AccessibilityService.class
                         .getMethod("setMotionEventSources", int.class);
-                method.invoke(this, InputDevice.SOURCE_TOUCHSCREEN);
+                if (method != null) {
+                    method.invoke(this, InputDevice.SOURCE_TOUCHSCREEN);
+                }
             } catch (Exception ignored) {
-                // Some OEM builds restrict this; assistant role still works.
+                // Optional Android 14+ raw touch hook; do not break Android 12.
             }
         }
     }
@@ -66,12 +55,13 @@ public class MyAccessibilityService extends AccessibilityService {
                 homeDownTime = System.currentTimeMillis();
             } else if (event.getAction() == KeyEvent.ACTION_UP && homeDown) {
                 homeDown = false;
-                if (System.currentTimeMillis() - homeDownTime >= HOME_LONG_PRESS_MS) {
+                long elapsed = System.currentTimeMillis() - homeDownTime;
+                if (elapsed >= HOME_LONG_PRESS_MS) {
                     summon();
                 }
             }
         }
-        return false; // never consume: short Home presses still go Home
+        return false;
     }
 
     @Override
@@ -81,7 +71,6 @@ public class MyAccessibilityService extends AccessibilityService {
 
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                // Only touches that START inside the outer 12dp count.
                 if (event.getX() <= edge || event.getX() >= screenWidth - edge) {
                     edgeActive = true;
                     edgeDownTime = System.currentTimeMillis();
@@ -96,7 +85,6 @@ public class MyAccessibilityService extends AccessibilityService {
                     edgeActive = false;
                     float dy = Math.abs(event.getY() - edgeStartY);
                     long dt = System.currentTimeMillis() - edgeDownTime;
-                    // A deliberate, mostly-vertical flick along the edge.
                     if (dy >= MIN_SWIPE_PX && dt <= MAX_SWIPE_MS) {
                         summon();
                     }
@@ -111,20 +99,18 @@ public class MyAccessibilityService extends AccessibilityService {
         if (now - lastSummon < SUMMON_DEBOUNCE_MS) return;
         lastSummon = now;
 
-        Intent i = new Intent(this, SummonActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+        Intent intent = new Intent(this, SummonActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_NO_ANIMATION
                 | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-        startActivity(i);
+        startActivity(intent);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        // Not used; we only need key/motion observation.
     }
 
     @Override
     public void onInterrupt() {
-        // No-op.
     }
 }

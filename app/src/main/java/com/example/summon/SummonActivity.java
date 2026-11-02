@@ -5,9 +5,12 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -21,16 +24,6 @@ import android.widget.Toast;
  * long-press Home (3-button nav) or corner-swipe (gesture nav) launches this
  * activity with ACTION_ASSIST, and "Ask Summon AI" in the text-selection
  * menu launches it with ACTION_PROCESS_TEXT (selection prefilled).
- *
- * FIXES in v1.2 (keyboard never showed):
- *  - The window NO LONGER starts with FLAG_NOT_FOCUSABLE. A summoned panel
- *    is supposed to take focus immediately, Gemini-style.
- *  - windowSoftInputMode is now "adjustResize|stateVisible", so the system
- *    opens the keyboard by itself as soon as the window is focused.
- *  - As a belt-and-braces backup, onWindowFocusChanged(true) requests the
- *    IME again. This covers launches from the overlay service where the
- *    earlier postDelayed(150ms) attempt ran before the window had focus
- *    and silently failed.
  */
 public class SummonActivity extends Activity {
 
@@ -50,6 +43,16 @@ public class SummonActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Window window = getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+                | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
         setContentView(R.layout.activity_summon);
 
         scrim = findViewById(R.id.scrim);
@@ -62,7 +65,6 @@ public class SummonActivity extends Activity {
         sendBtn.setOnClickListener(v -> onSend());
         inputBox.setOnClickListener(v -> showKeyboard());
 
-        // Slide the sheet in from the bottom.
         bottomSheet.setTranslationY(dp(220));
         bottomSheet.setAlpha(0f);
         bottomSheet.animate()
@@ -73,23 +75,20 @@ public class SummonActivity extends Activity {
                 .start();
 
         inputBox.requestFocus();
+        inputBox.post(this::showKeyboard);
         maybePrefill(getIntent());
     }
 
-    /**
-     * The reliable IME hook: when launched from a background service the
-     * window only gains focus a moment after onCreate, so we ask for the
-     * keyboard again here. stateVisible in the manifest covers the rest.
-     */
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            showKeyboard();
+            inputBox.post(this::showKeyboard);
         }
     }
 
     private void showKeyboard() {
+        if (inputBox == null) return;
         inputBox.requestFocus();
         InputMethodManager imm =
                 (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -105,7 +104,6 @@ public class SummonActivity extends Activity {
         maybePrefill(intent);
     }
 
-    /** Text selected anywhere + "Ask Summon AI" -> prefill the input. */
     private void maybePrefill(Intent intent) {
         if (intent != null && Intent.ACTION_PROCESS_TEXT.equals(intent.getAction())) {
             CharSequence t = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT);
