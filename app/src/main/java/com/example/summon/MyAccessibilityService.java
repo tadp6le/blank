@@ -15,8 +15,8 @@ import android.view.accessibility.AccessibilityEvent;
  * What this service adds:
  *  - Android 14+ (API 34): opts in to raw touch events via
  *    setMotionEventSources() — this is REQUIRED for onMotionEvent to ever
- *    fire, which is why edge swipes did not work before. We detect a
- *    deliberate vertical swipe starting inside the outer 12dp of the screen.
+ *    fire. We detect a deliberate vertical swipe starting inside the outer
+ *    12dp of the screen.
  *  - 3-button navigation: we observe (never consume) KEYCODE_HOME and
  *    measure the press duration to detect a long press.
  *
@@ -45,7 +45,7 @@ public class MyAccessibilityService extends AccessibilityService {
         if (Build.VERSION.SDK_INT >= 34) {
             try {
                 // Android 14+: without this call onMotionEvent is NEVER invoked.
-                setMotionEventSources(InputDevice.SOURCE_TOUCH_SCREEN);
+                setMotionEventSources(InputDevice.SOURCE_TOUCHSCREEN);
             } catch (Exception ignored) {
                 // Some OEM builds restrict this; assistant role still works.
             }
@@ -71,7 +71,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     @Override
-    public boolean onMotionEvent(MotionEvent event) {
+    public void onMotionEvent(MotionEvent event) {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int edge = Math.round(12f * getResources().getDisplayMetrics().density);
 
@@ -99,7 +99,6 @@ public class MyAccessibilityService extends AccessibilityService {
                 }
                 break;
         }
-        return false; // never consume: system gestures keep working
     }
 
     private void summon() {
